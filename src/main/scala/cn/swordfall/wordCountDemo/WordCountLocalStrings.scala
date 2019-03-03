@@ -1,4 +1,4 @@
-package cn.swordfall
+package cn.swordfall.wordCountDemo
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.time.Time

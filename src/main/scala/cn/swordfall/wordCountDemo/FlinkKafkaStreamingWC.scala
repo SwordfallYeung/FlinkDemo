@@ -1,4 +1,4 @@
-package cn.swordfall
+package cn.swordfall.wordCountDemo
 
 import java.util.Properties
 
