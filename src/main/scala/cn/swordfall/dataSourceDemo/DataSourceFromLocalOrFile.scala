@@ -10,10 +10,6 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   * @Date: 2019/3/3 21:48
   */
 class DataSourceFromLocalOrFile {
-  def main(args: Array[String]): Unit = {
-
-  }
-
   /**
     * 基本本地集合的source
     */
@@ -106,5 +102,11 @@ class DataSourceFromLocalOrFile {
     text2.print()
 
     env.execute()
+  }
+}
+
+object DataSourceFromLocalOrFile{
+  def main(args: Array[String]): Unit = {
+
   }
 }
