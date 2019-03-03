@@ -1,8 +1,8 @@
-package cn.swordfall
+package cn.swordfall.windowOperatorDemo
 
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
+import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, GlobalWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 
 /**
@@ -36,7 +36,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
   *    4.如果以ProcessingTime基准来定义时间窗口那将形成ProcessingTimeWindow，以operator的systemTime为准。
   *
   */
-object TimeWindowStreaming {
+object WindowStreaming {
 
   def main(args: Array[String]): Unit = {
 
@@ -46,30 +46,43 @@ object TimeWindowStreaming {
     * 交通场景下time-window实战
     *
     * 每5秒钟统计一次，在这过去的5秒钟内，各个路口通过红绿灯汽车的数量。
+    *
+    * 1.发送命令
+    * nc -lk 9999
+    *
+    * 2.发送内容
+    * 9,3
+    * 9,2
+    * 9,7
+    * 4,9
+    * 2,6
+    * 1,5
+    * 2,3
+    * 5,7
+    * 5,4
+    *
     */
 
   /**
+    * 翻滚窗口(Tumbling Windows)
+    *
+    * 翻滚窗口概念定义
+    * // tumbling event-time windows
+    *   input
+    *        .keyBy(<key selector>)
+    *        .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+    *        .<windowed transformation>(<window function>)
+    *
+    * // tumbling processing-time windows
+    *    input
+    *         .keyBy(<key selector>)
+    *         .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+    *         .<windowed transformation>(<window function>)
     * tumbling-time-window(无重叠数据)实战
     */
   def tumblingTimeWindow(): Unit ={
     //1.创建运行环境
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-
-    /**
-      * 1.发送命令
-      * nc -lk 9999
-      *
-      * 2.发送内容
-      * 9,3
-      * 9,2
-      * 9,7
-      * 4,9
-      * 2,6
-      * 1,5
-      * 2,3
-      * 5,7
-      * 5,4
-      */
 
     //2.定义数据流来源
     val text = env.socketTextStream("192.168.187.201", 9999)
@@ -84,6 +97,7 @@ object TimeWindowStreaming {
     //4.执行统计操作，每个sensorId一个tumbling窗口，窗口的大小为5秒
     //也就是说，每5秒钟统计一次，在这过去的5秒钟内，各个路口通过红绿灯汽车的数量
     val ds2: DataStream[CarWc] = ds1.keyBy("sensorId")
+      //.window(TumblingEventTimeWindows.of(Time.seconds(5)))同下一句操作
       .timeWindow(Time.seconds(5))
       .sum("carCnt")
 
@@ -95,9 +109,20 @@ object TimeWindowStreaming {
   }
 
   /**
+    * 滑动窗口（Sliding Windows）
+    *  // sliding event-time windows
+    *    input
+    *         .keyBy(<key selector>)
+    *         .window(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+    *         .<windowed transformation>(<window function>)
+    *
+    * // sliding processing-time windows
+    *     input
+    *          .keyBy(<key selector>)
+    *          .window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+    *          .<windowed transformation>(<window function>)
     * sliding-time-window(有重叠数据)实战
     */
-
   def slidingTimeWindow(): Unit ={
     //1.创建运行环境
     val env = StreamExecutionEnvironment.getExecutionEnvironment
@@ -116,6 +141,85 @@ object TimeWindowStreaming {
     //也就是说，每5秒钟统计一次，在这过去的5秒钟内，各个路口通过红绿灯汽车的数量
     val ds2: DataStream[CarWc] = ds1.keyBy("sensorId")
       .timeWindow(Time.seconds(10), Time.seconds(5))
+      .sum("carCnt")
+
+    //5.显示统计结果
+    ds2.print()
+
+    //6.触发流计算
+    env.execute(this.getClass.getName)
+  }
+
+  /**
+    * 还有两种窗口：全局窗口global windows和会话窗口session windows
+    */
+
+  /**
+    * 全局窗口
+    * 全局窗口定义
+    * //global windows
+    *   input
+    *        .keyBy(<key selector>)
+    *        .window(GlobalWindows.create())
+    */
+  def globalWindows: Unit ={
+    //1.创建运行环境
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+    //2.定义数据流来源
+    val text = env.socketTextStream("192.168.187.201", 9999)
+
+    //3.转换数据格式，text -> CarWc
+    case class CarWc(sensorId: Int, carCnt: Int)
+    val ds1: DataStream[CarWc] = text.map((f) => {
+      val tokens = f.split(",")
+      CarWc(tokens(0).trim.toInt, tokens(1).trim.toInt)
+    })
+
+    //4.执行全局统计操作
+    val ds2: DataStream[CarWc] = ds1.keyBy("sensorId")
+      .window(GlobalWindows.create())
+      .sum("carCnt")
+
+    //5.显示统计结果
+    ds2.print()
+
+    //6.触发流计算
+    env.execute(this.getClass.getName)
+  }
+
+  /**
+    * 会话窗口 Session Windows
+    * 会话窗口定义
+    * // event-time session windows
+    *  input
+    *       .keyBy(<key selector>)
+    *       .window(EventTimeSessionWindows.withGap(Time.minutes(10)))
+    *       .<windowed transformation>(<window function>)
+    *
+    * // processing-time session windows
+    *   input
+    *        .keyBy(<key selector>)
+    *        .window(ProcessingTimeSessionWindows.withGap(Time.minutes(10)))
+    *        .<windowed transformation>(<window function>)
+    */
+  def sessionWindows: Unit ={
+    //1.创建运行环境
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+    //2.定义数据流来源
+    val text = env.socketTextStream("192.168.187.201", 9999)
+
+    //3.转换数据格式，text -> CarWc
+    case class CarWc(sensorId: Int, carCnt: Int)
+    val ds1: DataStream[CarWc] = text.map((f) => {
+      val tokens = f.split(",")
+      CarWc(tokens(0).trim.toInt, tokens(1).trim.toInt)
+    })
+
+    //4.执行全局统计操作
+    val ds2: DataStream[CarWc] = ds1.keyBy("sensorId")
+      .window(EventTimeSessionWindows.withGap(Time.minutes(10)))
       .sum("carCnt")
 
     //5.显示统计结果
@@ -212,4 +316,5 @@ object TimeWindowStreaming {
     //5.触发流计算
     env.execute()
   }
+
 }
