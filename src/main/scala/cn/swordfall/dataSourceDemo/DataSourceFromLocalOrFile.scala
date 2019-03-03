@@ -1,4 +1,4 @@
-package cn.swordfall.dataSource
+package cn.swordfall.dataSourceDemo
 
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 

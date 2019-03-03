@@ -1,4 +1,4 @@
-package cn.swordfall.dataSource
+package cn.swordfall.dataSourceDemo
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
 import org.apache.flink.configuration.Configuration
