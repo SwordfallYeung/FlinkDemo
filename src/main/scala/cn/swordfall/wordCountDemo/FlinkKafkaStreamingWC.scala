@@ -6,6 +6,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.log4j.{Level, Logger}
+import org.apache.flink.streaming.api.scala._
 
 /**
   * @Author: Yang JianQiu

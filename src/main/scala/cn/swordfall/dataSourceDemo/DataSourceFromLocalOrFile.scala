@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironm
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-
+import org.apache.flink.streaming.api.scala._
 /**
   * @Author: Yang JianQiu
   * @Date: 2019/3/3 21:48

@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.{FileOutputFormat, JobConf}
 import org.apache.hadoop.mapred.lib.MultipleTextOutputFormat
+import org.apache.flink.streaming.api.scala._
 
 /**
   * @Author: Yang JianQiu
