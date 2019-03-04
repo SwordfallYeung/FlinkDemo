@@ -1,10 +1,10 @@
-package cn.swordfall.dataSourceDemo
+package cn.swordfall.dataSourceDemo.flinkStreaming
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
+
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.source.{RichSourceFunction, SourceFunction}
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
 
 /**
   * @Author: Yang JianQiu
