@@ -19,7 +19,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   *      ③使用env.generateSequence()方法创建基于Sequence的DataSet
   *  2.基于文件的source(File-based-source)
   */
-class dataSourceDemo {
+class DataSourceDemo {
 
   /**
     * 基于本地集合的source
