@@ -85,7 +85,7 @@ object DataSetDemo {
     result3.collect()
 
     //11.filter 过滤满足添加的元素，不满足条件的元素将被丢弃！
-    val input6: DataSet[String] = env.fromElements("zhangsan boy", "lisi is a girl so sex","wangwu boy"))
+    val input6: DataSet[String] = env.fromElements("zhangsan boy", "lisi is a girl so sex","wangwu boy")
     val result4 = input6.filter(_.contains("boy"))
     result4.collect()
 
@@ -324,6 +324,83 @@ object DataSetDemo {
       3.系统将合并两个排序好的输入。
       4.适用于一个或两个分区已经排序好的情况。*/
 
-    //20.
+    //20.leftOuterJoin 左外连接
+    val ratings2: DataSet[Rating] = env.fromElements(
+      Rating("moon","youny1",3),Rating("sun","youny2",4),
+      Rating("cat","youny3",1),Rating("dog","youny4",5),Rating("tiger","youny4",5))
+    val movies: DataSet[(String, String)] = env.fromElements(
+      ("moon", "ok"), ("dog", "good"), ("cat", "notbad"), ("sun", "nice"),("water", "nice")
+    )
+    //20.1 两个dataset进行左外连接，指定方法
+    val result10 = movies.leftOuterJoin(ratings2).where(0).equalTo("name"){
+      (m, r) => (m._1, if (r == null) -1 else r.points)
+    }
+    result10.collect()
+
+    //20.2 两个dataset进行左外连接，指定连接暗示，并指定连接方法
+    val result11 = movies.leftOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
+      (m, r) => (m._1, if (r == null) -1 else r.points)
+    }
+    result11.collect()
+    /*左外连接支持以下项目：
+    JoinHint.OPTIMIZER_CHOOSES
+    JoinHint.BROADCAST_HASH_SECOND
+    JoinHint.REPARTITION_HASH_SECOND
+    JoinHint.REPARTITION_SORT_MERGE*/
+
+    //21.rightOuterJoin 右外连接
+    //21.1 两个dataset进行左外连接，指定连接方法
+    val result12 = movies.rightOuterJoin(ratings2).where(0).equalTo("name"){
+      (m, r) => (if (m == null) -1 else m._1, if (r == null) -1 else r.points)
+    }
+    result12.collect()
+    //21.2 两个dataset进行右外连接，指定连接暗示，并指定连接方法
+    val result13 = movies.rightOuterJoin(ratings2, JoinHint.BROADCAST_HASH_FIRST).where(0).equalTo("name"){
+      (m, r) => (if (m == null) -1 else m._1, if (r == null) -1 else r.points)
+    }
+    result13.collect()
+    /*右外连接支持以下项目：
+    JoinHint.OPTIMIZER_CHOOSES
+    JoinHint.BROADCAST_HASH_FIRST
+    JoinHint.REPARTITION_HASH_FIRST
+    JoinHint.REPARTITION_SORT_MERGE*/
+
+    //22. fullOuterJoin 全外连接
+    //22.1 两个dataset进行全外连接，指定连接方法
+    val result14 = movies.fullOuterJoin(ratings2).where(0).equalTo("name"){
+      (m, r) => (m._1, if (r == null) -1 else r.points)
+    }
+    result14.collect()
+    //22.2 两个dataset进行全外连接，指定连接暗示，并指定连接方法
+    val result15 = movies.fullOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
+      (m, r) => (m._1, if (r == null) -1 else r.points)
+    }
+    result15.collect()
+
+    //23. cross 交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
+    //23.1 基本tuple
+    val coords1 = env.fromElements((1,4,7),(2,5,8),(3,6,9))
+    val coords2 = env.fromElements((10,40,70),(20,50,80),(30,60,90))
+    val result16 = coords1.cross(coords2)
+    result16.collect()
+    //23.2 case class
+    case class Coord(id: Int, x: Int, y: Int)
+    val coords3: DataSet[Coord] = env.fromElements(Coord(1, 4, 7), Coord(2, 5, 8), Coord(3, 6, 9))
+    val coords4: DataSet[Coord] = env.fromElements(Coord(10, 40, 70), Coord(20, 50, 80), Coord(30, 60, 90))
+    //交叉两个DataSet[Coord]
+    val result17 = coords3.cross(coords4)
+    result17.collect()
+    //23.3 自定义操作
+    //交叉两个DataSet[Coord]，使用自定义方法
+    val result18 = coords3.cross(coords4){
+      (c1, c2) => {
+        val dist = (c1.x + c2.x) + (c1.y + c2.y)
+        (c1.id, c2.id, dist)
+      }
+    }
+    result18.collect()
+
+    //24.crossWithTiny 暗示第二个输入较小的交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
+    val result19 = coords3.crossWithTiny(coords4)
   }
 }
