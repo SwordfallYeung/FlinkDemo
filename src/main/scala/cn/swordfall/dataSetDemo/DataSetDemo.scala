@@ -28,40 +28,38 @@ object DataSetDemo {
     input1.count()
 
     //4.min 获取最小的元素
-    case class Student(age: Int, name: String, height: Double)
-    val input2: DataSet[Student] = env.fromElements(
-      Student(16, "zhangsan", 194.5),
-      Student(17, "zhangsan", 184.5),
-      Student(18, "zhangsan", 174.5),
-      Student(16, "lisi", 194.5),
-      Student(17, "lisi", 184.5),
-      Student(18, "lisi", 174.5)
+    case class Student1(age: Int, name: String, height: Double)
+    val input2: DataSet[Student1] = env.fromElements(
+      Student1(16, "zhangsan", 194.5),
+      Student1(17, "zhangsan", 184.5),
+      Student1(18, "zhangsan", 174.5),
+      Student1(16, "lisi", 194.5),
+      Student1(17, "lisi", 184.5),
+      Student1(18, "lisi", 174.5)
     )
     //4.1获取age最小的元素
-    val output40: DataSet[Student] = input2.min(0)
-    output40.collect()
+    input2.min(0).collect()
+
     //4.2获取age最小的元素
-    val output41: DataSet[Student] = input2.min("age")
-    output41.collect()
+    input2.min("age").collect()
 
     //5.max 获取最大的元素
     //5.1获取age最大的元素
-    val output50: DataSet[Student] = input2.max(0)
-    output50.collect()
+    input2.max(0).collect()
+
     //5.2获取age最大的元素
-    val output51: DataSet[Student] = input2.max("age")
-    output51.collect()
+    input2.max("age").collect()
+
 
     //6.sum 获取元素的的累加和，只能作用于数值类型
     //6.1 fieldIndex=0的列进行sum
-    val s0 = input2.sum(0)
-    s0.collect()
+    input2.sum(0).collect()
+
     //6.2 fieldName="age"的列进行sum
-    val s1 = input2.sum("age")
-    s1.collect()
+    input2.sum("age").collect()
+
     //6.3 fieldName="height"的列进行sum
-    val s2 = input2.sum("height")
-    s2.collect()
+    input2.sum("height").collect()
 
     //7.getType 获取DataSet的元素的类型信息
     input1.getType()
@@ -69,33 +67,30 @@ object DataSetDemo {
     //8.map 将一个DataSet转换成另一个DataSet。转换操作对每一个元素执行一次。
     val input3: DataSet[Int] = env.fromElements(23, 67, 18, 29, 32, 56, 4, 27)
     //将DataSet中的每个元素乘以2
-    val result1 = input3.map(_ * 2)
-    result1.collect()
+    input3.map(_ * 2).collect()
 
     //9.flatMap
     val input4: DataSet[String] = env.fromElements("zhangsan boy", "lisi girl")
     //将DataSet中的每个元素用空格切割成一组单词
-    val result2 = input4.flatMap(_.split(" "))
-    result2.collect()
+    input4.flatMap(_.split(" ")).collect()
+
 
     //10.mapPartition 和map类似，不同它的处理单位是partition，而非element。
     val input5: DataSet[String] = env.fromElements("zhangsan boy", "lisi is a girl so sex")
     //获取partition的个数
-    val result3 = input5.mapPartition(in => Some(in.size))
-    result3.collect()
+    input5.mapPartition(in => Some(in.size)).collect()
 
     //11.filter 过滤满足添加的元素，不满足条件的元素将被丢弃！
     val input6: DataSet[String] = env.fromElements("zhangsan boy", "lisi is a girl so sex","wangwu boy")
-    val result4 = input6.filter(_.contains("boy"))
-    result4.collect()
+    input6.filter(_.contains("boy")).collect()
 
     //12.reduce 根据一定的条件和方式来合并DataSet。
     val a1: DataSet[Int] = env.fromElements(2, 5, 9, 8, 7, 3)
-    val b1: DataSet[Int] = a1.reduce(_ + _)
-    b1.collect()
+    a1.reduce(_ + _).collect()
+
     val a2: DataSet[String] = env.fromElements("zhangsan boy", "lisi girl")
-    val b2: DataSet[String] = a2.reduce(_ + _)
-    b2.collect()
+     a2.reduce(_ + _).collect()
+
 
     //13.groupBy 暗示第二个输入较小的交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
     case class WC(val word: String, val salary: Int)
@@ -104,31 +99,30 @@ object DataSetDemo {
     )
     //13.1.1使用一个case class Fields
     // 使用key-expressions
-    val wordCounts1 = words.groupBy("word").reduce(
+    words.groupBy("word").reduce(
       (w1, w2) => new WC(w1.word, w1.salary + w2.salary)
-    )
-    wordCounts1.collect()
+    ).collect()
+
     //13.1.2使用key-selector
-    val wordCounts2 = words.groupBy(_.word).reduce(
+    words.groupBy(_.word).reduce(
       (w1, w2) => new WC(w1.word, w1.salary + w2.salary)
-    )
-    wordCounts2.collect()
+    ).collect()
+
     //13.2.1使用多个case class Fields
-    case class Student(val name: String, addr: String, salary: Double)
-    val tuples: DataSet[Student] = env.fromElements(
-      Student("lisi","shandong",2400.00),Student("zhangsan","henan",2600.00),
-      Student("lisi","shandong",2700.00),Student("lisi","guangdong",2800.00)
+    case class Student2(val name: String, addr: String, salary: Double)
+    val tuples: DataSet[Student2] = env.fromElements(
+      Student2("lisi","shandong",2400.00),Student2("zhangsan","henan",2600.00),
+      Student2("lisi","shandong",2700.00),Student2("lisi","guangdong",2800.00)
     )
     //13.2.2使用自定义的reduce方法，使用多个Case Class Fields name
-    val reducedTuples1 = tuples.groupBy("name", "addr").reduce(
-      (s1, s2) => Student(s1.name + "-" + s2.name, s1.addr + "-" + s2.addr, s1.salary + s2.salary)
-    )
-    reducedTuples1.collect()
+    tuples.groupBy("name", "addr").reduce(
+      (s1, s2) => Student2(s1.name + "-" + s2.name, s1.addr + "-" + s2.addr, s1.salary + s2.salary)
+    ).collect()
+
     //13.2.3使用自定义的reduce方法，使用多个Case Class Fields index
-    val reducedTuples2 = tuples.groupBy(0, 1).reduce(
-      (s1, s2) => Student(s1.name + "-" + s2.name, s1.addr + "-" + s2.addr, s1.salary + s2.salary)
-    )
-    reducedTuples2.collect()
+    tuples.groupBy(0, 1).reduce(
+      (s1, s2) => Student2(s1.name + "-" + s2.name, s1.addr + "-" + s2.addr, s1.salary + s2.salary)
+    ).collect()
 
     //14.ReduceGroup 此函数和reduce函数类似，不过它每次处理一个grop而非一个元素。
     val input7: DataSet[(Int, String)] = env.fromElements(
@@ -136,28 +130,27 @@ object DataSetDemo {
       (22, "lisi"), (20, "zhangsan")
     )
     //14.1.1先用String分组，然后对分组进行reduceGroup
-    val output7 = input7.groupBy(1).reduceGroup{
+    input7.groupBy(1).reduceGroup{
       //将相同的元素用set去重
       (in, out: Collector[(Int, String)]) =>
         in.toSet foreach(out.collect)
-    }
-    output7.collect()
+    }.collect()
+
     //14.2.1
-    case class Student(age: Int, name: String)
+    case class Student3(age: Int, name: String)
     //14.2.2 创建DataSet[Student]
-    val input8: DataSet[Student] = env.fromElements(
-      Student(20, "zhangsan"),
-      Student(22, "zhangsan"),
-      Student(22, "lisi"),
-      Student(20, "zhangsan")
+    val input8: DataSet[Student3] = env.fromElements(
+      Student3(20, "zhangsan"),
+      Student3(22, "zhangsan"),
+      Student3(22, "lisi"),
+      Student3(20, "zhangsan")
     )
     //14.2.3以age进行分组，然后对分组进行reduceGroup
-    val output8 = input8.groupBy(_.age).reduceGroup(
+    input8.groupBy(_.age).reduceGroup(
       //将相同的元素用set去重
-      (in, out: Collector[Student]) =>
+      (in, out: Collector[Student3]) =>
         in.toSet foreach(out.collect)
-    )
-    output8.collect()
+    ).collect()
 
     //15.sortGroup 对分组好的排序
     val input9: DataSet[(Int, String)] = env.fromElements(
@@ -171,57 +164,56 @@ object DataSetDemo {
     //15.1用int分组，用int对分组进行排序
     val sortData = input9.groupBy(0).sortGroup(0, Order.ASCENDING)
     //15.2对排序好的分组进行reduceGroup
-    val outputData = sortData.reduceGroup(
+    sortData.reduceGroup(
       //将相同的元素用set去重
       (in, out: Collector[(Int, String)]) =>
         in.toSet foreach(out.collect)
-    )
-    outputData.collect()
+    ).collect()
 
     //16. minBy 在分组后的数据中，获取每组最小的元素
-    case class Student(age: Int, name: String,height:Double)
+    case class Student4(age: Int, name: String, height:Double)
     //16.1创建DataSet[Student]
-    val input10: DataSet[Student] = env.fromElements(
-      Student(16,"zhangasn",194.5),
-      Student(17,"zhangasn",184.5),
-      Student(18,"zhangasn",174.5),
-      Student(16,"lisi",194.5),
-      Student(17,"lisi",184.5),
-      Student(18,"lisi",174.5))
+    val input10: DataSet[Student4] = env.fromElements(
+      Student4(16,"zhangasn",194.5),
+      Student4(17,"zhangasn",184.5),
+      Student4(18,"zhangasn",174.5),
+      Student4(16,"lisi",194.5),
+      Student4(17,"lisi",184.5),
+      Student4(18,"lisi",174.5))
     //16.2 以name进行分组，获取age最小的元素
-    val output10: DataSet[Student] = input10.groupBy(_.name).minBy(0)
-    output10.collect()
+    input10.groupBy(_.name).minBy(0).collect()
+
     //16.3 以name进行分组，获取height和age最小的元素
-    val output11: DataSet[Student] = input10.groupBy(_.name).minBy(2, 0)
-    output11.collect()
+    input10.groupBy(_.name).minBy(2, 0).collect()
+
 
     //17. maxBy 在分组后的数据中，获取每组最大的元素
     //17.1 以name进行分组，获取age最大的元素
-    val output12: DataSet[Student] = input10.groupBy(_.name).maxBy(0)
-    output12.collect()
+    input10.groupBy(_.name).maxBy(0).collect()
+
     //17.2 以name进行分组，获取height和age最大的元素
-    val output13: DataSet[Student] = input10.groupBy(_.name).maxBy(2, 0)
-    output13.collect()
+    input10.groupBy(_.name).maxBy(2, 0).collect()
+
 
     //18.distinct 对DataSet中的元素进行去重
     val input11: DataSet[String] = env.fromElements("lisi","zhangsan", "lisi","wangwu")
     //18.1单一项目元素去重
-    val result5 = input11.distinct()
-    result5.collect()
+    input11.distinct().collect()
+
     //18.2多项目去重，不指定比较项目，默认是全部比较
     val input12: DataSet[(Int, String, Double)] =  env.fromElements(
       (2,"zhagnsan",1654.5),(3,"lisi",2347.8),(2,"zhagnsan",1654.5),
       (4,"wangwu",1478.9),(5,"zhaoliu",987.3),(2,"zhagnsan",1654.0))
-    val output14 = input12.distinct()
-    output14.collect()
+    input12.distinct().collect()
+
     //18.3多项目的去重，指定比较项目, 元素去重：指定比较第0和第1号元素
-    val output15 = input12.distinct(0, 1)
-    output15.collect()
+    input12.distinct(0, 1).collect()
+
     //18.4case class的去重，指定比较项目
-    case class Student(name : String, age : Int)
-    val input13: DataSet[Student] = env.fromElements(
-      Student("zhangsan", 24),Student("zhangsan",24),Student("zhangsan",25),
-      Student("lisi",24),Student("wangwu",24),Student("lisi",25)
+    case class Student5(name : String, age : Int)
+    val input13: DataSet[Student5] = env.fromElements(
+      Student5("zhangsan", 24),Student5("zhangsan",24),Student5("zhangsan",25),
+      Student5("lisi",24),Student5("wangwu",24),Student5("lisi",25)
     )
     //去掉age重复的元素
     val age_r = input13.distinct("age")
@@ -241,9 +233,8 @@ object DataSetDemo {
     //18.5 根据表达式进行去重
     val input14: DataSet[Int] = env.fromElements(3,-3,4,-4,6,-5,7)
     //根据表达式，本例中是根据元素的绝对值进行元素去重
-    val output16 = input14.distinct {x => Math.abs(x)}
-    //显示结果
-    output16.collect
+    input14.distinct {x => Math.abs(x)}.collect
+
 
     //19.join 将两个DataSet进行join操作
     //19.1创建一个 DataSet其元素为[(Int,String)]类型
@@ -253,8 +244,7 @@ object DataSetDemo {
     val input16: DataSet[(Double, Int)] = env.fromElements(
       (1850.98,4),(1950.98,5),(2350.98,6),(3850.98,3))
     //两个DataSet进行join操作，条件是input1(0)==input2(1)
-    val result = input15.join(input16).where(0).equalTo(1)
-    result.collect()
+    input15.join(input16).where(0).equalTo(1).collect()
 
     //19.2
     case class Rating(name: String, category: String, points: Int)
@@ -267,17 +257,14 @@ object DataSetDemo {
       ("youny1",4.3),("youny2",7.2),
       ("youny3",9.0),("youny4",1.5))
     //使用方法进行join
-    val weightedRatings = ratings.join(weights).where("category").equalTo(0) {
+    ratings.join(weights).where("category").equalTo(0) {
       (rating, weight) => (rating.name, rating.points + weight._2)
-    }
-    //显示结果
-    weightedRatings.collect
+    }.collect
     //19.3
-    val weightedRatings2 = ratings.join(weights).where("category").equalTo(0){
+    ratings.join(weights).where("category").equalTo(0){
       (rating, weight, out: Collector[(String, Double)]) =>
         if (weight._2 > 0.1) out.collect(rating.name, rating.points * weight._2)
-    }
-    weightedRatings2.collect()
+    }.collect()
 
     //19.4 执行join操作时暗示数据大小
     val input17: DataSet[(Int, String)] =
@@ -286,11 +273,10 @@ object DataSetDemo {
     val input18: DataSet[(Int, String)] =
       env.fromElements((4000,"zhangsan"),(70000,"lisi"),(4600,"wangwu"),(53000,"zhaoliu"))
     //暗示第二个输入很小
-    val result7 = input17.joinWithTiny(input18).where(1).equalTo(1)
-    result7.collect
+    input17.joinWithTiny(input18).where(1).equalTo(1).collect
+
     // 4.暗示第二个输入很大
-    val result8 = input17.joinWithHuge(input18).where(1).equalTo(1)
-    result8.collect
+    input17.joinWithHuge(input18).where(1).equalTo(1).collect
 
     //19.5 flink有很多种执行join的策略，你可以指定一个执行策略，以便提高执行效率。
     val input19: DataSet[(Int, String)] =
@@ -298,9 +284,8 @@ object DataSetDemo {
     val input20: DataSet[(Int, String)] =
       env.fromElements((4000,"zhangsan"),(70000,"lisi"),(4600,"wangwu"),(53000,"zhaoliu"))
     //暗示input2很小
-    val result9 = input1.join(input2, JoinHint.BROADCAST_HASH_FIRST).where(1).equalTo(1)
-    //显示结果
-    result9.collect
+    input19.join(input20, JoinHint.BROADCAST_HASH_FIRST).where(1).equalTo(1).collect
+
     /*暗示有如下选项：
     1.JoinHint.OPTIMIZER_CHOOSES:
       没有明确暗示，让系统自行选择。
@@ -332,16 +317,15 @@ object DataSetDemo {
       ("moon", "ok"), ("dog", "good"), ("cat", "notbad"), ("sun", "nice"),("water", "nice")
     )
     //20.1 两个dataset进行左外连接，指定方法
-    val result10 = movies.leftOuterJoin(ratings2).where(0).equalTo("name"){
+    movies.leftOuterJoin(ratings2).where(0).equalTo("name"){
       (m, r) => (m._1, if (r == null) -1 else r.points)
-    }
-    result10.collect()
+    }.collect()
 
     //20.2 两个dataset进行左外连接，指定连接暗示，并指定连接方法
-    val result11 = movies.leftOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
+    movies.leftOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
       (m, r) => (m._1, if (r == null) -1 else r.points)
-    }
-    result11.collect()
+    }.collect()
+
     /*左外连接支持以下项目：
     JoinHint.OPTIMIZER_CHOOSES
     JoinHint.BROADCAST_HASH_SECOND
@@ -350,15 +334,14 @@ object DataSetDemo {
 
     //21.rightOuterJoin 右外连接
     //21.1 两个dataset进行左外连接，指定连接方法
-    val result12 = movies.rightOuterJoin(ratings2).where(0).equalTo("name"){
+    movies.rightOuterJoin(ratings2).where(0).equalTo("name"){
       (m, r) => (if (m == null) -1 else m._1, if (r == null) -1 else r.points)
-    }
-    result12.collect()
+    }.collect()
+
     //21.2 两个dataset进行右外连接，指定连接暗示，并指定连接方法
-    val result13 = movies.rightOuterJoin(ratings2, JoinHint.BROADCAST_HASH_FIRST).where(0).equalTo("name"){
+    movies.rightOuterJoin(ratings2, JoinHint.BROADCAST_HASH_FIRST).where(0).equalTo("name"){
       (m, r) => (if (m == null) -1 else m._1, if (r == null) -1 else r.points)
-    }
-    result13.collect()
+    }.collect()
     /*右外连接支持以下项目：
     JoinHint.OPTIMIZER_CHOOSES
     JoinHint.BROADCAST_HASH_FIRST
@@ -367,29 +350,28 @@ object DataSetDemo {
 
     //22. fullOuterJoin 全外连接
     //22.1 两个dataset进行全外连接，指定连接方法
-    val result14 = movies.fullOuterJoin(ratings2).where(0).equalTo("name"){
+    movies.fullOuterJoin(ratings2).where(0).equalTo("name"){
       (m, r) => (m._1, if (r == null) -1 else r.points)
-    }
-    result14.collect()
+    }.collect()
+
     //22.2 两个dataset进行全外连接，指定连接暗示，并指定连接方法
-    val result15 = movies.fullOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
+    movies.fullOuterJoin(ratings2, JoinHint.REPARTITION_SORT_MERGE).where(0).equalTo("name"){
       (m, r) => (m._1, if (r == null) -1 else r.points)
-    }
-    result15.collect()
+    }.collect()
 
     //23. cross 交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
     //23.1 基本tuple
     val coords1 = env.fromElements((1,4,7),(2,5,8),(3,6,9))
     val coords2 = env.fromElements((10,40,70),(20,50,80),(30,60,90))
-    val result16 = coords1.cross(coords2)
-    result16.collect()
+    coords1.cross(coords2).collect()
+
     //23.2 case class
     case class Coord(id: Int, x: Int, y: Int)
     val coords3: DataSet[Coord] = env.fromElements(Coord(1, 4, 7), Coord(2, 5, 8), Coord(3, 6, 9))
     val coords4: DataSet[Coord] = env.fromElements(Coord(10, 40, 70), Coord(20, 50, 80), Coord(30, 60, 90))
     //交叉两个DataSet[Coord]
-    val result17 = coords3.cross(coords4)
-    result17.collect()
+    coords3.cross(coords4).collect()
+
     //23.3 自定义操作
     //交叉两个DataSet[Coord]，使用自定义方法
     val result18 = coords3.cross(coords4){
@@ -397,10 +379,14 @@ object DataSetDemo {
         val dist = (c1.x + c2.x) + (c1.y + c2.y)
         (c1.id, c2.id, dist)
       }
-    }
-    result18.collect()
+    }.collect()
 
     //24.crossWithTiny 暗示第二个输入较小的交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
-    val result19 = coords3.crossWithTiny(coords4)
+    coords3.crossWithTiny(coords4).collect()
+
+    //25.crossWithHuge 暗示第二个输入较大的交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
+    coords3.crossWithHuge(coords4).collect()
+
+
   }
 }
