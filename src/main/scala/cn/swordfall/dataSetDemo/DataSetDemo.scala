@@ -1,5 +1,8 @@
 package cn.swordfall.dataSetDemo
 
+import java.lang
+
+import org.apache.flink.api.common.functions._
 import org.apache.flink.api.common.operators.Order
 import org.apache.flink.api.common.operators.base.JoinOperatorBase.JoinHint
 import org.apache.flink.api.scala.{DataSet, ExecutionEnvironment, _}
@@ -387,6 +390,275 @@ object DataSetDemo {
     //25.crossWithHuge 暗示第二个输入较大的交叉。拿第一个输入的每一个元素和第二个输入的每一个元素进行交叉操作。
     coords3.crossWithHuge(coords4).collect()
 
+    //26.Union 合并多个DataSet
+    case class Student6(val name: String, addr: String, salary: Double)
+    val tuples1 = env.fromElements(Student6("lisi-1", "shandong", 2400.0), Student6("zhangsan-1", "henan", 2600.00))
+    val tuples2 = env.fromElements(Student6("lisi-2", "shandong", 2400.0), Student6("zhangsan-2", "henan", 2600.00))
+    val tuples3 = env.fromElements(Student6("lisi-3", "shandong", 2400.0), Student6("zhangsan-3", "henan", 2600.00))
+    //将三个DataSet合并起来
+    tuples1.union(tuples2).union(tuples3).collect()
 
+    //27.first 取前n个元素
+    val in: DataSet[Student6] = env.fromElements(
+      Student6("lisi","shandong",2400.00),Student6("zhangsan","hainan",2600.00),
+      Student6("wangwu","shandong",2400.00),Student6("zhaoliu","hainan",2600.00),
+      Student6("xiaoqi","guangdong",2400.00),Student6("xiaoba","henan",2600.00)
+    )
+    //取前2个元素
+    in.first(2).collect()
+    //取前2个元素
+    in.groupBy(0).first(2).collect()
+    //取前3个元素
+    in.groupBy(0).sortGroup(1, Order.ASCENDING).first(3).collect()
+
+    //28.getParallelism 获取DataSet的并行度
+    val input21: DataSet[String] = env.fromElements("A", "B", "C")
+    input21.getParallelism
+
+    //29.setParallelism 设置DataSet的并行度，设置的并行度必须大于1
+    input21.setParallelism(2)
+
+    //30.writeAsText 将DataSet写出到存储系统。不同的存储系统写法不一样。hdfs文件路径：hdfs:///path/to/data。本地文件路径：file:///path/to/data
+    case class Student7(age: Int, name: String, height: Double)
+    val input22: DataSet[Student7] = env.fromElements(
+      Student7(16, "zhangsan", 194.5),
+      Student7(17, "zhangsan", 184.5),
+      Student7(18, "zhangsan", 174.5),
+      Student7(16, "lisi", 194.5),
+      Student7(17, "lisi", 184.5),
+      Student7(18, "lisi", 174.5)
+    )
+    //将DataSet写出到存储系统
+    input22.writeAsText("hdfs://output/flink/dataset/testData/students.txt")
+    env.execute()
+
+    //31.writeAsCsv rowDelimiter：行分隔符  fieldDelimiter：列分隔符  将DataSet以CSV格式写出到存储系统。路径写法参考writeAsText。
+    input22.writeAsCsv("hdfs:///output/flink/dataset/testdata/students.csv", "#", "|")
+    env.execute()
+
+    //32.getExecutionEnvironment 获取DataSet的执行环境上下文,这个歌上下文和当前的DataSet有关，不是全局的。
+    val input23: DataSet[String] = env.fromElements("A", "B", "C")
+    val input24: DataSet[String] = env.fromElements("A", "B")
+    //获取DataSet的执行环境上下文
+    env
+    val env0 = input23.getExecutionEnvironment
+    val env1 = input24.getExecutionEnvironment
+    env0 == env1
+
+    //33.Aggregate 聚合
+
+    //34.CoGroup 将2个DataSet中的元素，按照key进行分组，一起分组2个DataSet。而groupBy值能分组一个DataSet
+    val authors = env.fromElements(
+      Tuple3("A001", "zhangsan", "zhangsan@qq.com"),
+      Tuple3("A001", "lisi", "lisi@qq.com"),
+      Tuple3("A001", "wangwu", "wangwu@qq.com"))
+    val posts = env.fromElements(
+      Tuple2("P001", "zhangsan"),
+      Tuple2("P002", "lisi"),
+      Tuple2("P003", "wangwu"),
+      Tuple2("P004", "lisi"))
+     //将scala中coGroup没有with方法来使用CoGroupFunction
+     authors.coGroup(posts).where(1).equalTo(1).print()
+
+    //35.combineGroup
+
+    //36.mapWith 可以使用偏函数进行map操作
+    //引入增强依赖
+    import org.apache.flink.api.scala.extensions._
+    case class Point(x: Double, y: Double)
+    val ds = env.fromElements(Point(1, 2), Point(3, 4), Point(5, 6))
+    //使用mapWith进行元素转化
+    ds.mapWith{
+      case Point(x, y) => Point(x * 2, y + 1)
+    }.collect()
+
+    ds.mapWith{
+      case Point(x, _) => x * 2
+    }.collect()
+
+    //37.filterWith 可以使用偏函数进行filter操作。
+    //使用filterWith进行元素过滤
+    ds.filterWith{
+      case Point(x, y) => x > 1 && y < 5
+    }.collect()
+    ds.filterWith{
+      case Point(x, _) => x > 1
+    }.collect()
+
+    //38.reduceWith 可以使用偏函数进行reduce操作。
+    //使用reduceWith进行元素的merger
+    ds.reduceWith{
+      case (Point(x1, y1), Point(x2, y2)) => Point(x1 + x2, y1 + y2)
+    }.collect()
+
+    //39.flatMapWith 可以使用偏函数进行flatMap操作。
+    ds.flatMapWith{
+      case Point(x, y) => Seq("x" -> x, "y" -> y)
+    }.collect()
+
+    //40.map 以element为粒度，对element进行1：1的转化
+    val text = env.fromElements("flink vs spark", "buffer vs shuffer")
+    //以element为粒度，将element进行map操作，转化为大写并添加后缀字符串"--##bigdata##"
+    text.map(new MapFunction[String, String] {
+      override def map(value: String): String = value.toUpperCase() + "--##bigdata##"
+    }).print()
+    //以element为粒度，将element进行map操作，转化为大写,并计算line的长度。
+    text.map(new MapFunction[String, (String, Int)] {
+      override def map(value: String): (String, Int) = (value.toUpperCase(), value.length)
+    }).print()
+    //定义class，以element为粒度，将element进行map操作，转化为大写,并计算line的长度。
+    case class WC1(line: String, length: Int)
+    text.map(new MapFunction[String, WC1] {
+      override def map(value: String): WC1 = WC1(value.toUpperCase(), value.length)
+    }).print()
+
+    //41.mapPartition 以partition为粒度，对element进行1：1的转化。有时候会比map效率高。
+    //以partition为粒度，进行map操作，计算element个数
+    text.mapPartition(new MapPartitionFunction[String, Long]() {
+      override def mapPartition(values: lang.Iterable[String], out: Collector[Long]): Unit = {
+        var c = 0
+        val itor = values.iterator()
+        while (itor.hasNext){
+          itor.next()
+          c = c + 1
+        }
+        out.collect(c)
+      }
+    }).print()
+    //以partition为粒度，进行map操作，转化element内容
+    text.mapPartition(partitionMapper = new MapPartitionFunction[String, String]() {
+      override def mapPartition(values: lang.Iterable[String], out: Collector[String]): Unit = {
+        val itor = values.iterator()
+        while (itor.hasNext){
+          val line = itor.next().toUpperCase() + "--##bigdata##"
+          out.collect(line)
+        }
+      }
+    }).print()
+    //以partition为粒度，进行map操作，转化为大写,并计算line的长度。
+    text.mapPartition(new MapPartitionFunction[String, WC1] {
+      override def mapPartition(values: lang.Iterable[String], out: Collector[WC1]): Unit = {
+        val itor = values.iterator()
+        while (itor.hasNext){
+          val s = itor.next()
+          out.collect(WC1(s.toUpperCase(), s.length))
+        }
+      }
+    }).print()
+
+    //41.flatMap 以element为粒度，对element进行1：n的转化
+    //以element为粒度，将element进行map操作，转化为大写并添加后缀字符串"--##bigdata##"
+    text.flatMap(new FlatMapFunction[String, String]() {
+      override def flatMap(value: String, out: Collector[String]): Unit = {
+        out.collect(value.toUpperCase() + "--##bigdata##")
+      }
+    }).print()
+    //对每句话进行单词切分,一个element可以转化为多个element，这里是一个line可以转化为多个Word
+    //map的只能对element进行1：1转化，而flatMap可以对element进行1：n转化
+    val text3 = text.flatMap{
+      new FlatMapFunction[String, Array[String]] {
+        override def flatMap(value: String, out: Collector[Array[String]]): Unit = {
+          val arr: Array[String] = value.toUpperCase.split("\\s+")
+          out.collect(arr)
+        }
+      }
+    }
+    //显示结果的简单写法
+    text3.collect().foreach(_.foreach(println(_)))
+    //实际上是先获取Array[String]，再从中获取到String
+    text3.collect().foreach(arr => {
+      arr.foreach(token => {
+        println(token)
+      })
+    })
+
+    //42.filter 以element为粒度，对element进行过滤操作。将满足过滤条件的element组成新的DataSet
+    val text4 = env.fromElements(2, 4, 7, 8, 9, 6)
+    //对DataSet的元素进行过滤，筛选出偶数元素
+    text4.filter(new FilterFunction[Int] {
+      override def filter(value: Int): Boolean = {
+        value % 2 == 0
+      }
+    }).print()
+    //对DataSet的元素进行过滤，筛选出大于5的元素
+    text4.filter(new FilterFunction[Int] {
+      override def filter(value: Int): Boolean = {
+        value > 5
+      }
+    })
+
+    //43.reduce 以element为粒度，对element进行合并操作。最后只能形成一个结果
+    //对DataSet的元素进行合并，这里是计算累加和
+    text4.reduce(new ReduceFunction[Int] {
+      override def reduce(value1: Int, value2: Int): Int = {
+        value1 + value2
+      }
+    }).print()
+    //对DataSet的元素进行合并，这里是计算累乘积
+    text4.reduce(new ReduceFunction[Int] {
+      override def reduce(value1: Int, value2: Int): Int = {
+        value1 * value2
+      }
+    }).print()
+    //对DataSet的元素进行合并，逻辑可以写的很复杂
+    text4.reduce(new ReduceFunction[Int] {
+      override def reduce(value1: Int, value2: Int): Int = {
+        if (value1 % 2 == 0){
+          value1 + value2
+        }else{
+          value1 * value2
+        }
+      }
+    })
+    //对DataSet的元素进行合并，可以看出value1是临时合并结果，next是下一个元素
+    text4.reduce(new ReduceFunction[Int] {
+      override def reduce(value1: Int, value2: Int): Int = {
+        println("value1=" + value1 + ", next=" + value2)
+        value1 + value2
+      }
+    }).collect()
+
+    //44.reduceGroup 对每一组的元素分别进行合并操作。与reduce类似，不过它能为每一组产生一个结果。如果没有分组，就当作一个分组，此时和reduce一样，只会产生一个结果。
+    //对DataSet的元素进行分组合并，这里是计算累加和
+    text4.reduceGroup(new GroupReduceFunction[Int, Int] {
+      override def reduce(values: lang.Iterable[Int], out: Collector[Int]): Unit = {
+        var sum = 0
+        val itor = values.iterator()
+        while (itor.hasNext){
+          sum += itor.next()
+        }
+        out.collect(sum)
+      }
+    }).print()
+    //对DataSet的元素进行分组合并，这里是分别计算偶数和奇数的累加和
+    text4.reduceGroup(new GroupReduceFunction[Int, (Int, Int)] {
+      override def reduce(values: lang.Iterable[Int], out: Collector[(Int, Int)]): Unit = {
+        var sum0 = 0
+        var sum1 = 0
+        val itor = values.iterator()
+        while (itor.hasNext){
+          val v = itor.next()
+        }
+      }
+    })
+    //对DataSet的元素进行分组合并，这里是对分组后的数据进行合并操作，统计每个人的工资总和（每个分组会合并出一个结果）
+    val data = env.fromElements(
+      ("zhangsan", 1000), ("lisi", 1001), ("zhangsan", 3000), ("lisi", 1002)
+    )
+    //根据name进行分组
+    data.groupBy(0).reduceGroup(new GroupReduceFunction[(String, Int), (String, Int)] {
+      override def reduce(values: lang.Iterable[(String, Int)], out: Collector[(String, Int)]): Unit = {
+        var salary = 0
+        var name = ""
+        val itor = values.iterator()
+        //统计每个人的工资总和
+        while (itor.hasNext){
+          val t = itor.next()
+          name = t._1
+          salary += t._2
+        }
+        out.collect(name, salary)
+      }
+    }).print()
   }
 }
